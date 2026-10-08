@@ -42,6 +42,8 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .ftg{display:flex;align-items:center;gap:6px;background:var(--card);color:var(--tx);border:1px solid var(--bd);position:relative;white-space:nowrap}
 .fdot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--pr)}
 [hidden]{display:none!important}
+h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align-self:stretch}
+.arow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)}.arow .del{align-self:auto;margin:0}
 .cnt{color:var(--mu);margin:0 0 10px}
 </style>
 </head>
@@ -65,6 +67,26 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 </div>
 </div>
 
+<div id="adView" hidden>
+<button id="adback" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
+<div class="box" id="adLogin"><h2>🔐 অ্যাডমিন লগইন</h2><div class="grid">
+<div><label>আইডি</label><input id="aid" autocapitalize="off" autocomplete="username"></div>
+<div><label>পাসওয়ার্ড</label><input id="apw" type="password" autocomplete="current-password"></div>
+<div class="full"><button id="alog">লগইন</button><div id="amsg" class="msg"></div></div></div></div>
+<div id="adPanel" hidden>
+<div class="box" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b id="who"></b><button id="aout" style="background:var(--mu)">লগআউট</button></div>
+<div class="box"><h3>পাসওয়ার্ড পরিবর্তন</h3><div class="grid">
+<div><label>বর্তমান পাসওয়ার্ড</label><input id="cp" type="password"></div>
+<div><label>নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="np" type="password"></div>
+<div class="full"><button id="cpb">পরিবর্তন করুন</button><div id="cpm" class="msg"></div></div></div></div>
+<div class="box"><h3>অ্যাডমিন তালিকা</h3><div id="alist"></div><div class="grid" style="margin-top:12px">
+<div><label>নতুন অ্যাডমিন আইডি</label><input id="nid" autocapitalize="off"></div>
+<div><label>পাসওয়ার্ড</label><input id="npw" type="password"></div>
+<div class="full"><button id="nab">অ্যাডমিন যোগ করুন</button><div id="nam" class="msg"></div></div></div></div>
+<div class="box"><h3>⚠️ ডেঞ্জার জোন</h3><p class="ds">সব প্রোফাইল চিরতরে মুছে যাবে।</p><button id="dall" style="background:#d33">সব তথ্য মুছুন</button><div id="dam" class="msg"></div></div>
+</div>
+</div>
+
 <div id="listView">
 <button id="add" style="margin-bottom:12px">＋ তথ্য যোগ করুন</button>
 
@@ -80,13 +102,15 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 </div>
 <p class="cnt" id="cnt"></p>
 <div class="cards" id="cards"></div>
+<p style="text-align:center;margin-top:24px"><button id="adl" type="button" style="background:none;color:var(--mu);border:1px solid var(--bd);padding:6px 14px;font-size:.85rem">🔐 অ্যাডমিন</button></p>
 </div>
 </div>
 
 <div id="lb" hidden><img id="lbi" alt=""></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDoc,deleteDoc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged,updatePassword,reauthenticateWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ⚠️ নিজের Firebase কনফিগ বসান
 const firebaseConfig={apiKey:"AIzaSyB1ocSNnkczCXomd5Rv_0C73Z9inw_E0bQ",authDomain:"info-ca710.firebaseapp.com",projectId:"info-ca710",storageBucket:"info-ca710.firebasestorage.app",messagingSenderId:"637194065758",appId:"1:637194065758:web:bbdf4acefb21bb1f0361cf"};
@@ -102,14 +126,11 @@ const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
 opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
 opts($("fu"),"সব ইউনিয়ন",U);opts($("fw"),"সব ওয়ার্ড",W);
 
-const isReg=()=>location.pathname.replace(/\/+$/,"").endsWith("/register")||location.hash==="#/register";
-function route(){const r=isReg();$("regView").hidden=!r;$("listView").hidden=r;window.scrollTo(0,0)}
-function go(reg){
-  try{history.pushState({},"",reg?"/register":"/")}catch(e){location.hash=reg?"#/register":""}
-  route();
-}
-$("add").onclick=()=>go(true);
-$("back").onclick=()=>go(false);
+const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/admin")||h==="#/admin"?"admin":p.endsWith("/register")||h==="#/register"?"register":""};
+function route(){const r=pg();$("regView").hidden=r!=="register";$("adView").hidden=r!=="admin";$("listView").hidden=r!=="";window.scrollTo(0,0)}
+function go(p){try{history.pushState({},"",p?"/"+p:"/")}catch(e){location.hash=p?"#/"+p:""}route()}
+$("add").onclick=()=>go("register");
+$("back").onclick=()=>go("");$("adback").onclick=()=>go("");$("adl").onclick=()=>go("admin");
 addEventListener("popstate",route);addEventListener("hashchange",route);
 route();
 
@@ -122,7 +143,7 @@ async function uploadImg(dataUrl){
   return j.data.display_url||j.data.url;
 }
 
-let data=[],db=null;
+let data=[],db=null,adm=null;
 const demo=firebaseConfig.apiKey==="YOUR_API_KEY";
 if(demo){
   try{data=JSON.parse(localStorage.getItem("demo")||"[]")}catch(e){}
@@ -132,6 +153,103 @@ if(demo){
   onSnapshot(query(collection(db,"profiles"),orderBy("createdAt","desc")),s=>{
     data=s.docs.map(d=>({id:d.id,...d.data()}));render();
   },e=>{$("msg").textContent="ডেটা লোড করা যায়নি";$("msg").className="msg err"});
+}
+
+const say=(el,t,ok)=>{el.textContent=t;el.className="msg "+(ok?"ok":"err")};
+const aerr=(e,d)=>{const c=(e&&e.code)||"";
+  if(c.includes("operation-not-allowed"))return "Firebase Authentication এ Email/Password চালু করুন";
+  if(c.includes("email-already-in-use"))return "এই আইডি আগে থেকেই আছে";
+  if(c.includes("weak-password"))return "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন";
+  if(c.includes("network"))return "ইন্টারনেট সংযোগ নেই";
+  if(c.includes("permission-denied"))return "অনুমতি নেই, Firestore Rules দেখুন";
+  if(c.includes("too-many"))return "অনেকবার চেষ্টা হয়েছে, কিছুক্ষণ পরে করুন";
+  return d};
+const mail=id=>id.trim().toLowerCase()+"@admin.local";
+const okId=id=>/^[a-z0-9_.-]{3,20}$/.test(id.trim().toLowerCase());
+if(demo){$("adl").hidden=true}else{
+  const auth=getAuth();let busy=false;
+  const showAdm=()=>{
+    $("adLogin").hidden=!!adm;$("adPanel").hidden=!adm;
+    if(adm){$("who").textContent="👤 অ্যাডমিন: "+adm.id;loadAdmins()}
+    $("adl").textContent=adm?"🔐 অ্যাডমিন প্যানেল":"🔐 অ্যাডমিন";
+    render();
+  };
+  async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,id:s.data().id}:null}
+  onAuthStateChanged(auth,async u=>{
+    if(busy)return;
+    if(!u){adm=null;showAdm();return}
+    try{adm=await checkAdmin(u)}catch(e){adm=null}
+    if(!adm)await signOut(auth).catch(()=>{});
+    showAdm();
+  });
+  $("alog").onclick=async()=>{
+    const m=$("amsg"),id=$("aid").value.trim().toLowerCase(),pw=$("apw").value;
+    if(!okId(id)||!pw)return say(m,"আইডি ও পাসওয়ার্ড দিন");
+    busy=true;$("alog").disabled=true;
+    try{
+      let u;
+      try{u=(await signInWithEmailAndPassword(auth,mail(id),pw)).user}
+      catch(e){
+        if(id==="admin"&&pw==="admin1"&&/user-not-found|invalid-credential|invalid-login/.test(e.code||"")){
+          try{u=(await createUserWithEmailAndPassword(auth,mail(id),pw)).user;await setDoc(doc(db,"admins",u.uid),{id:"admin",createdAt:serverTimestamp()})}
+          catch(e2){await signOut(auth).catch(()=>{});throw /email-already/.test(e2.code||"")?e:e2}
+        }else throw e;
+      }
+      adm=await checkAdmin(u);
+      if(!adm){await signOut(auth);say(m,"আপনি অ্যাডমিন নন")}else{$("apw").value="";say(m,"")}
+    }catch(e){say(m,aerr(e,"ভুল আইডি বা পাসওয়ার্ড"))}
+    busy=false;$("alog").disabled=false;showAdm();
+  };
+  $("apw").onkeydown=e=>{if(e.key==="Enter")$("alog").click()};
+  $("aout").onclick=()=>signOut(auth);
+  async function loadAdmins(){
+    const box=$("alist");
+    try{
+      const s=await getDocs(collection(db,"admins"));box.innerHTML="";
+      s.docs.forEach(d=>{
+        const r=document.createElement("div");r.className="arow";
+        const n=document.createElement("span");n.textContent=d.data().id+(d.id===adm.uid?" (আপনি)":"");r.append(n);
+        if(d.id!==adm.uid){const b=document.createElement("button");b.className="del";b.textContent="সরান";
+          b.onclick=async()=>{if(!confirm(d.data().id+" কে অ্যাডমিন থেকে সরাবেন?"))return;
+            try{await deleteDoc(doc(db,"admins",d.id));loadAdmins()}catch(e){say($("nam"),aerr(e,"সরানো যায়নি"))}};r.append(b)}
+        box.append(r);
+      });
+    }catch(e){box.textContent=""}
+  }
+  $("nab").onclick=async()=>{
+    const m=$("nam"),id=$("nid").value.trim().toLowerCase(),pw=$("npw").value;
+    if(!okId(id))return say(m,"আইডি ৩-২০ অক্ষরের (ইংরেজি অক্ষর/সংখ্যা) হতে হবে");
+    if(pw.length<6)return say(m,"পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন");
+    $("nab").disabled=true;
+    try{
+      const au2=getAuth(initializeApp(firebaseConfig,"sec"+Date.now()));
+      const cr=await createUserWithEmailAndPassword(au2,mail(id),pw);
+      await signOut(au2);
+      await setDoc(doc(db,"admins",cr.user.uid),{id,createdAt:serverTimestamp()});
+      say(m,"✅ অ্যাডমিন যোগ হয়েছে",1);$("nid").value="";$("npw").value="";loadAdmins();
+    }catch(e){say(m,aerr(e,"যোগ করা যায়নি"))}
+    $("nab").disabled=false;
+  };
+  $("cpb").onclick=async()=>{
+    const m=$("cpm"),cur=$("cp").value,nw=$("np").value,u=auth.currentUser;
+    if(!cur||nw.length<6)return say(m,"বর্তমান ও নতুন পাসওয়ার্ড দিন (নতুনটি কমপক্ষে ৬ অক্ষর)");
+    try{
+      await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,cur));
+      await updatePassword(u,nw);
+      say(m,"✅ পাসওয়ার্ড বদলানো হয়েছে",1);$("cp").value="";$("np").value="";
+    }catch(e){say(m,aerr(e,"বর্তমান পাসওয়ার্ড ভুল"))}
+  };
+  $("dall").onclick=async()=>{
+    const m=$("dam");
+    if(!confirm("সব তথ্য মুছে ফেলবেন? এটি ফেরত আনা যাবে না।")||!confirm("আবার নিশ্চিত করুন: সব প্রোফাইল মুছবে?"))return;
+    $("dall").disabled=true;
+    try{
+      const s=await getDocs(collection(db,"profiles"));
+      for(let i=0;i<s.docs.length;i+=400){const b=writeBatch(db);s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
+      say(m,"✅ "+bn(s.size)+"টি তথ্য মুছে ফেলা হয়েছে",1);
+    }catch(e){say(m,aerr(e,"মুছা যায়নি"))}
+    $("dall").disabled=false;
+  };
 }
 
 function render(){
@@ -154,7 +272,9 @@ function render(){
     [p.union+" ইউনিয়ন","ওয়ার্ড "+bn(p.ward)].forEach(x=>{const s=document.createElement("span");s.className="tag";s.textContent=x;t.append(s)});
     const l=document.createElement("a");l.className="wa";l.target="_blank";l.rel="noopener";
     l.href="https://wa.me/88"+p.whatsapp;l.textContent="💬 WhatsApp: "+bn(p.whatsapp);
-    c.append(t,l);box.append(c);
+    c.append(t,l);
+    if(adm){const x=document.createElement("button");x.className="del";x.textContent="🗑 মুছুন";x.onclick=async()=>{if(confirm("এই তথ্য মুছবেন?"))try{await deleteDoc(doc(db,"profiles",p.id))}catch(e){alert("মুছা যায়নি")}};c.append(x)}
+    box.append(c);
   });
 }
 
@@ -203,7 +323,7 @@ $("sub").onclick=async()=>{
     else await addDoc(collection(db,"profiles"),{...rec,createdAt:serverTimestamp()});
     m.className="msg ok";m.textContent="✅ তথ্য জমা হয়েছে";
     ["name","des","wa"].forEach(i=>$(i).value="");$("un").value="";$("wd").value="";setPhoto("");
-    setTimeout(()=>{m.textContent="";go(false)},1200);
+    setTimeout(()=>{m.textContent="";go("")},1200);
   }catch(e){m.textContent="জমা দেওয়া যায়নি, আবার চেষ্টা করুন"}
   $("sub").disabled=false;
 };
