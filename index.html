@@ -86,9 +86,10 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <div class="grid">
 <div class="full ph"><div class="av" id="pv">📷</div><div style="flex:1"><label>ছবি (ঐচ্ছিক)</label><input id="ph" type="file" accept="image/*"><button type="button" id="phx" hidden style="margin-top:6px;background:var(--mu);padding:6px 12px">ছবি সরান</button></div></div>
 <div><label>নাম *</label><input id="name" maxlength="60"></div>
-<div><label>পদবি (যদি থাকে)</label><input id="des" maxlength="60"></div>
+
 <div><label>ক্যাটাগরি *</label><select id="cat"></select></div>
 <div id="subw" hidden><label id="sublbl"></label><select id="subc"></select></div>
+<div id="desw" hidden><label>পদবি (যদি থাকে)</label><input id="des" maxlength="60"></div>
 <div><label>ইউনিয়ন *</label><select id="un"></select></div>
 <div><label>ওয়ার্ড নং *</label><select id="wd"></select></div>
 <div class="full"><label>WhatsApp নাম্বার *</label><input id="wa" inputmode="tel" placeholder="01XXXXXXXXX"></div>
@@ -143,7 +144,7 @@ const firebaseConfig={apiKey:"AIzaSyB1ocSNnkczCXomd5Rv_0C73Z9inw_E0bQ",authDomai
 
 // ⚠️ imgbb.com/api থেকে পাওয়া API key বসান
 const IMGBB_KEY="da6077cdb534940820036e09f38d4a92";
-const UNIONS=["উথুরা","মেদুয়ারী","ভরাডোবা","ধীতপুর","বিরিনিয়া","ভালুকা","মল্লিকবাড়ী","ডাকাতিয়া","কাচিনা","হবিরবাড়ী","রাজৈ"];
+const UNIONS=["উথুরা","মেদুয়ারী","ভরাডোবা","ধীতপুর","বিরুনিয়া","ভালুকা","ভালুকা পৌরসভা","মল্লিকবাড়ী","ডাকাতিয়া","কাচিনা","হবিরবাড়ী","রাজৈ"];
 const bn=n=>String(n).replace(/\d/g,d=>"০১২৩৪৫৬৭৮৯"[d]);
 const en=s=>s.replace(/[০-৯]/g,d=>"০১২৩৪৫৬৭৮৯".indexOf(d));
 const $=id=>document.getElementById(id);
@@ -152,7 +153,7 @@ const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
 opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
 opts($("fu"),"সব ইউনিয়ন",U);const CATS={"নেতা":["ছাত্রদল","যুবদল","সেচ্ছাসেবকদল","বিএনপি মূল দল"],"প্রার্থী":["চেয়ারম্যান","মেম্বার","কাউন্সিলর","উপজেলা চেয়ারম্যান","উপজেলা ভাইস চেয়ারম্যান"]};
 opts($("cat"),"বাছাই করুন",Object.keys(CATS).map(k=>[k,k]));
-$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v;if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
+$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v;$("desw").hidden=v!=="নেতা";if(v!=="নেতা")$("des").value="";if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
 opts($("fw"),"সব ওয়ার্ড",W);
 
 const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/register")||h==="#/register"?"register":""};
@@ -180,7 +181,7 @@ if(demo){
 }else{
   db=getFirestore(initializeApp(firebaseConfig));
   onSnapshot(query(collection(db,"profiles"),orderBy("createdAt","desc")),s=>{
-    data=s.docs.map(d=>({id:d.id,...d.data()}));render();
+    data=s.docs.map(d=>{const r={id:d.id,...d.data()};if(r.union==="বিরিনিয়া")r.union="বিরুনিয়া";return r});render();
   },e=>{$("msg").textContent="ডেটা লোড করা যায়নি";$("msg").className="msg err"});
 }
 
@@ -343,7 +344,7 @@ $("ph").onchange=e=>{
 
 $("sub").onclick=async()=>{
   const m=$("msg");m.className="msg err";
-  const name=$("name").value.trim(),designation=$("des").value.trim(),union=$("un").value,ward=+$("wd").value,cat=$("cat").value,subc=$("subc").value;
+  const name=$("name").value.trim(),designation=$("cat").value==="নেতা"?$("des").value.trim():"",union=$("un").value,ward=+$("wd").value,cat=$("cat").value,subc=$("subc").value;
   let wa=en($("wa").value).replace(/[\s\-+]/g,"").replace(/^88/,"");
   if(!name)return m.textContent="নাম লিখুন";
   if(!cat)return m.textContent="ক্যাটাগরি বাছাই করুন";if(!subc)return m.textContent=cat==="নেতা"?"নেতার ধরন বাছাই করুন":"পদ বাছাই করুন";if(!union)return m.textContent="ইউনিয়ন বাছাই করুন";
@@ -358,7 +359,7 @@ $("sub").onclick=async()=>{
     if(demo){data.unshift(rec);localStorage.setItem("demo",JSON.stringify(data));render()}
     else await addDoc(collection(db,"profiles"),{...rec,createdAt:serverTimestamp()});
     m.className="msg ok";m.textContent="✅ তথ্য জমা হয়েছে";
-    ["name","des","wa"].forEach(i=>$(i).value="");$("un").value="";$("wd").value="";$("cat").value="";$("subw").hidden=true;setPhoto("");
+    ["name","des","wa"].forEach(i=>$(i).value="");$("un").value="";$("wd").value="";$("cat").value="";$("subw").hidden=true;$("desw").hidden=true;setPhoto("");
     setTimeout(()=>{m.textContent="";go("")},1200);
   }catch(e){m.textContent="জমা দেওয়া যায়নি, আবার চেষ্টা করুন"}
   $("sub").disabled=false;
