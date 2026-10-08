@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>তথ্য ডেটাবেস</title>
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--tx:#17231d;--mu:#65756c;--pr:#0f8a5f;--bd:#dfe8e3}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#182119;--tx:#e8f1ec;--mu:#93a69b;--bd:#26342b}}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+.wrap{max-width:960px;margin:auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0 2px}.sub{color:var(--mu);margin:0 0 16px}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+label{font-size:.85rem;color:var(--mu);display:block;margin-bottom:4px}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+button{background:var(--pr);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:inherit;cursor:pointer}
+button:disabled{opacity:.6}
+.full{grid-column:1/-1}
+.msg{margin-top:8px;font-size:.9rem}.err{color:#d33}.ok{color:var(--pr)}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.filters>div{flex:1;min-width:150px}
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.pc{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+.pc>.av{width:110px;height:110px;font-size:2.6rem;margin-bottom:4px;overflow:hidden}
+.pc>.av.zoom{cursor:zoom-in}
+.pc .wa{align-self:stretch}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;cursor:zoom-out}
+#lb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.av{width:46px;height:46px;border-radius:50%;background:var(--pr);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.ph{display:flex;align-items:center;gap:12px}
+.ph .av{flex:none;width:64px;height:64px;overflow:hidden}
+.ph .av img{width:100%;height:100%}
+.ph input{padding:8px}
+img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radius:50%;margin-top:8px}
+.nm{font-weight:600;font-size:1.05rem}.ds{color:var(--mu);font-size:.9rem}
+.tag{display:inline-block;background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:2px 10px;font-size:.8rem;margin-right:4px}
+.wa{margin-top:6px;text-align:center;background:#25d366;color:#fff;text-decoration:none;border-radius:10px;padding:8px}
+.sbar{display:flex;gap:8px;margin-bottom:12px}.sbar input{flex:1}
+.ftg{display:flex;align-items:center;gap:6px;background:var(--card);color:var(--tx);border:1px solid var(--bd);position:relative;white-space:nowrap}
+.fdot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--pr)}
+[hidden]{display:none!important}
+.cnt{color:var(--mu);margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📋 তথ্য ডেটাবেস</h1>
+<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p>
+
+<div id="regView" hidden>
+<button id="back" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
+<div class="box">
+<div class="grid">
+<div class="full ph"><div class="av" id="pv">📷</div><div style="flex:1"><label>ছবি (ঐচ্ছিক)</label><input id="ph" type="file" accept="image/*"><button type="button" id="phx" hidden style="margin-top:6px;background:var(--mu);padding:6px 12px">ছবি সরান</button></div></div>
+<div><label>নাম *</label><input id="name" maxlength="60"></div>
+<div><label>পদবি (যদি থাকে)</label><input id="des" maxlength="60"></div>
+<div><label>ইউনিয়ন *</label><select id="un"></select></div>
+<div><label>ওয়ার্ড নং *</label><select id="wd"></select></div>
+<div class="full"><label>WhatsApp নাম্বার *</label><input id="wa" inputmode="tel" placeholder="01XXXXXXXXX"></div>
+<div class="full"><button id="sub">তথ্য জমা দিন</button><div id="msg" class="msg"></div></div>
+</div>
+</div>
+</div>
+
+<div id="listView">
+<button id="add" style="margin-bottom:12px">＋ তথ্য যোগ করুন</button>
+
+<div class="sbar">
+<input id="q" type="search" placeholder="নাম, ইউনিয়ন বা ফোন নাম্বার দিয়ে খুঁজুন">
+<button id="ftg" type="button" class="ftg" aria-label="ফিল্টার">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg> ফিল্টার<span id="fdot" class="fdot" hidden></span></button>
+</div>
+<div class="box filters" id="fpanel" hidden>
+<div><label>ইউনিয়ন</label><select id="fu"></select></div>
+<div><label>ওয়ার্ড</label><select id="fw" disabled></select></div>
+<button id="clr" style="background:var(--mu)">রিসেট</button>
+</div>
+<p class="cnt" id="cnt"></p>
+<div class="cards" id="cards"></div>
+</div>
+</div>
+
+<div id="lb" hidden><img id="lbi" alt=""></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ⚠️ নিজের Firebase কনফিগ বসান
+const firebaseConfig={apiKey:"AIzaSyB1ocSNnkczCXomd5Rv_0C73Z9inw_E0bQ",authDomain:"info-ca710.firebaseapp.com",projectId:"info-ca710",storageBucket:"info-ca710.firebasestorage.app",messagingSenderId:"637194065758",appId:"1:637194065758:web:bbdf4acefb21bb1f0361cf"};
+
+// ⚠️ imgbb.com/api থেকে পাওয়া API key বসান
+const IMGBB_KEY="da6077cdb534940820036e09f38d4a92";
+const UNIONS=["উথুরা","মেদুয়ারী","ভরাডোবা","ধীতপুর","বিরিনিয়া","ভালুকা","মল্লিকবাড়ী","ডাকাতিয়া","কাচিনা","হবিরবাড়ী","রাজৈ"];
+const bn=n=>String(n).replace(/\d/g,d=>"০১২৩৪৫৬৭৮৯"[d]);
+const en=s=>s.replace(/[০-৯]/g,d=>"০১২৩৪৫৬৭৮৯".indexOf(d));
+const $=id=>document.getElementById(id);
+const opts=(el,first,list)=>{el.innerHTML="";const o=new Option(first,"");el.add(o);list.forEach(([v,t])=>el.add(new Option(t,v)))};
+const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
+opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
+opts($("fu"),"সব ইউনিয়ন",U);opts($("fw"),"সব ওয়ার্ড",W);
+
+const isReg=()=>location.pathname.replace(/\/+$/,"").endsWith("/register")||location.hash==="#/register";
+function route(){const r=isReg();$("regView").hidden=!r;$("listView").hidden=r;window.scrollTo(0,0)}
+function go(reg){
+  try{history.pushState({},"",reg?"/register":"/")}catch(e){location.hash=reg?"#/register":""}
+  route();
+}
+$("add").onclick=()=>go(true);
+$("back").onclick=()=>go(false);
+addEventListener("popstate",route);addEventListener("hashchange",route);
+route();
+
+async function uploadImg(dataUrl){
+  if(IMGBB_KEY==="YOUR_IMGBB_API_KEY")return dataUrl; // ডেমো মোড: কী না থাকলে লোকালি রাখে
+  const f=new FormData();f.append("image",dataUrl.split(",")[1]);
+  const res=await fetch("https://api.imgbb.com/1/upload?key="+IMGBB_KEY,{method:"POST",body:f});
+  const j=await res.json();
+  if(!j.success)throw new Error("upload");
+  return j.data.display_url||j.data.url;
+}
+
+let data=[],db=null;
+const demo=firebaseConfig.apiKey==="YOUR_API_KEY";
+if(demo){
+  try{data=JSON.parse(localStorage.getItem("demo")||"[]")}catch(e){}
+  render();
+}else{
+  db=getFirestore(initializeApp(firebaseConfig));
+  onSnapshot(query(collection(db,"profiles"),orderBy("createdAt","desc")),s=>{
+    data=s.docs.map(d=>({id:d.id,...d.data()}));render();
+  },e=>{$("msg").textContent="ডেটা লোড করা যায়নি";$("msg").className="msg err"});
+}
+
+function render(){
+  const u=$("fu").value,w=$("fw").value;
+  const q=en($("q").value.trim().toLowerCase()).replace(/^\+?88/,"");
+  const list=data.filter(p=>(!u||p.union===u)&&(!w||String(p.ward)===w)&&(!q||
+    [p.name,p.designation||"",p.union].some(x=>x.toLowerCase().includes(q))||p.whatsapp.includes(q)));
+  $("fdot").hidden=!(u||w);
+  $("cnt").textContent=bn(list.length)+" জন পাওয়া গেছে";
+  const box=$("cards");box.innerHTML="";
+  if(!list.length){box.innerHTML='<div class="ds">কোনো তথ্য নেই</div>';return}
+  list.forEach(p=>{
+    const c=document.createElement("div");c.className="pc";
+    const a=document.createElement("div");a.className="av";
+    if(p.photo){const im=document.createElement("img");im.src=p.photo;im.alt="";a.append(im);a.classList.add("zoom");a.onclick=()=>{$("lbi").src=p.photo;$("lb").hidden=false}}else a.textContent=[...p.name][0]||"?";
+    const n=document.createElement("div");n.className="nm";n.textContent=p.name;
+    c.append(a,n);
+    if(p.designation){const d=document.createElement("div");d.className="ds";d.textContent=p.designation;c.append(d)}
+    const t=document.createElement("div");
+    [p.union+" ইউনিয়ন","ওয়ার্ড "+bn(p.ward)].forEach(x=>{const s=document.createElement("span");s.className="tag";s.textContent=x;t.append(s)});
+    const l=document.createElement("a");l.className="wa";l.target="_blank";l.rel="noopener";
+    l.href="https://wa.me/88"+p.whatsapp;l.textContent="💬 WhatsApp: "+bn(p.whatsapp);
+    c.append(t,l);box.append(c);
+  });
+}
+
+$("fu").onchange=()=>{$("fw").disabled=!$("fu").value;$("fw").value="";render()};
+$("fw").onchange=()=>{render()};
+$("ftg").onclick=()=>{$("fpanel").hidden=!$("fpanel").hidden};
+$("q").oninput=render;
+$("lb").onclick=()=>{$("lb").hidden=true};
+addEventListener("keydown",e=>{if(e.key==="Escape")$("lb").hidden=true});
+$("clr").onclick=()=>{$("q").value="";$("fu").value="";$("fw").value="";$("fw").disabled=true;render()};
+
+let photo="";
+function setPhoto(v){photo=v;const pv=$("pv");pv.innerHTML="";
+  if(v){const im=document.createElement("img");im.src=v;pv.append(im)}else pv.textContent="📷";
+  $("phx").hidden=!v;if(!v)$("ph").value=""}
+$("phx").onclick=()=>setPhoto("");
+$("ph").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const m=$("msg");
+  const img=new Image(),u=URL.createObjectURL(f);
+  img.onload=()=>{
+    const r=Math.min(1,900/Math.max(img.width,img.height)),c=document.createElement("canvas");
+    c.width=Math.round(img.width*r);c.height=Math.round(img.height*r);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    setPhoto(c.toDataURL("image/jpeg",.85));URL.revokeObjectURL(u);
+  };
+  img.onerror=()=>{m.className="msg err";m.textContent="ছবিটি পড়া যায়নি";URL.revokeObjectURL(u)};
+  img.src=u;
+};
+
+$("sub").onclick=async()=>{
+  const m=$("msg");m.className="msg err";
+  const name=$("name").value.trim(),designation=$("des").value.trim(),union=$("un").value,ward=+$("wd").value;
+  let wa=en($("wa").value).replace(/[\s\-+]/g,"").replace(/^88/,"");
+  if(!name)return m.textContent="নাম লিখুন";
+  if(!union)return m.textContent="ইউনিয়ন বাছাই করুন";
+  if(!ward)return m.textContent="ওয়ার্ড নং বাছাই করুন";
+  if(!/^01[3-9]\d{8}$/.test(wa))return m.textContent="সঠিক WhatsApp নাম্বার দিন (১১ ডিজিট)";
+  if(data.some(p=>p.whatsapp===wa))return m.textContent="এই নাম্বার আগেই যোগ করা হয়েছে";
+  const rec={name,designation,union,ward,whatsapp:wa,photo:""};
+  $("sub").disabled=true;
+  try{
+    if(photo){m.className="msg";m.textContent="ছবি আপলোড হচ্ছে...";
+      try{rec.photo=await uploadImg(photo)}catch(e){m.className="msg err";m.textContent="ছবি আপলোড করা যায়নি, আবার চেষ্টা করুন";$("sub").disabled=false;return}}
+    if(demo){data.unshift(rec);localStorage.setItem("demo",JSON.stringify(data));render()}
+    else await addDoc(collection(db,"profiles"),{...rec,createdAt:serverTimestamp()});
+    m.className="msg ok";m.textContent="✅ তথ্য জমা হয়েছে";
+    ["name","des","wa"].forEach(i=>$(i).value="");$("un").value="";$("wd").value="";setPhoto("");
+    setTimeout(()=>{m.textContent="";go(false)},1200);
+  }catch(e){m.textContent="জমা দেওয়া যায়নি, আবার চেষ্টা করুন"}
+  $("sub").disabled=false;
+};
+</script>
+</body>
+</html>
