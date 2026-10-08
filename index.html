@@ -58,6 +58,9 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .mbox{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;position:relative}
 .mbox input{margin-bottom:10px}.mx{position:absolute;top:10px;right:10px;background:none;color:var(--mu);padding:4px 10px;font-size:1.1rem}
 .cat{background:var(--pr);color:#fff;border-radius:20px;padding:3px 14px;font-size:.82rem}.cat.cand{background:#d97706}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.tabs button{flex:none;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;font-size:.88rem;white-space:nowrap}
+.tabs button.par{font-weight:700}.tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
 .lg{max-width:420px;margin:24px auto}.lg h2{text-align:center}.lg .grid{grid-template-columns:1fr}
 .adhead{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(135deg,var(--pr),#0a5c40);color:#fff;border:0}
 .adhead button{background:rgba(255,255,255,.2)}
@@ -117,6 +120,7 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <div id="listView">
 <button id="add" style="margin-bottom:12px">＋ তথ্য যোগ করুন</button>
 
+<div class="tabs" id="tabs"></div>
 <div class="sbar">
 <input id="q" type="search" placeholder="নাম, ইউনিয়ন বা ফোন নাম্বার দিয়ে খুঁজুন">
 <button id="ftg" type="button" class="ftg" aria-label="ফিল্টার">
@@ -288,10 +292,24 @@ if(demo){$("adl").hidden=true}else{
   };
 }
 
+let tab="";
+const tabOk=p=>{if(!tab)return true;const x=tab.slice(2);if(tab[0]==="c")return p.category===x;const[k,sb]=x.split("|");return p.category===k&&p.sub===sb};
+function renderTabs(){
+  const box=$("tabs");box.innerHTML="";
+  const add=(key,label,n,par)=>{const b=document.createElement("button");b.type="button";
+    b.className=(par?"par ":"")+(tab===key?"on":"");b.textContent=label+" ("+bn(n)+")";
+    b.onclick=()=>{tab=key;render()};box.append(b)};
+  add("","সব",data.length,true);
+  Object.keys(CATS).forEach(k=>{
+    add("c:"+k,k,data.filter(p=>p.category===k).length,true);
+    CATS[k].forEach(x=>add("s:"+k+"|"+x,x,data.filter(p=>p.category===k&&p.sub===x).length,false));
+  });
+}
 function render(){
+  renderTabs();
   const u=$("fu").value,w=$("fw").value;
   const q=en($("q").value.trim().toLowerCase()).replace(/^\+?88/,"");
-  const list=data.filter(p=>(!u||p.union===u)&&(!w||String(p.ward)===w)&&(!q||
+  const list=data.filter(p=>(!u||p.union===u)&&(!w||String(p.ward)===w)&&tabOk(p)&&(!q||
     [p.name,p.designation||"",p.union,p.category||"",p.sub||""].some(x=>x.toLowerCase().includes(q))||p.whatsapp.includes(q)));
   $("fdot").hidden=!(u||w);
   $("cnt").textContent=bn(list.length)+" জন পাওয়া গেছে";
