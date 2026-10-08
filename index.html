@@ -42,6 +42,15 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .ftg{display:flex;align-items:center;gap:6px;background:var(--card);color:var(--tx);border:1px solid var(--bd);position:relative;white-space:nowrap}
 .fdot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--pr)}
 [hidden]{display:none!important}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.acts button{padding:8px 14px;font-size:.88rem;border-radius:20px}
+#adl{background:var(--card);color:var(--tx);border:1px solid var(--bd)}#aout2{background:#d33}
+.achip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:4px 12px 4px 4px;font-size:.88rem}
+.aav{width:28px;height:28px;border-radius:50%;background:var(--pr);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.lg{max-width:420px;margin:24px auto}.lg h2{text-align:center}.lg .grid{grid-template-columns:1fr}
+.adhead{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(135deg,var(--pr),#0a5c40);color:#fff;border:0}
+.adhead button{background:rgba(255,255,255,.2)}
+.box h3{border-left:4px solid var(--pr);padding-left:8px}
 h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align-self:stretch}
 .arow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)}.arow .del{align-self:auto;margin:0}
 .cnt{color:var(--mu);margin:0 0 10px}
@@ -49,8 +58,8 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 </head>
 <body>
 <div class="wrap">
-<h1>📋 তথ্য ডেটাবেস</h1>
-<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p>
+<div class="top"><div><h1>📋 তথ্য ডেটাবেস</h1>
+<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p></div><div class="acts"><button id="adl" type="button">🔐 অ্যাডমিন লগইন</button><span class="achip" id="achip" hidden><span class="aav" id="aav"></span><b id="aname"></b></span><button id="aout2" type="button" hidden>লগআউট</button></div></div>
 
 <div id="regView" hidden>
 <button id="back" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
@@ -69,12 +78,12 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 
 <div id="adView" hidden>
 <button id="adback" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
-<div class="box" id="adLogin"><h2>🔐 অ্যাডমিন লগইন</h2><div class="grid">
+<div class="box lg" id="adLogin"><h2>🔐 অ্যাডমিন লগইন</h2><div class="grid">
 <div><label>আইডি</label><input id="aid" autocapitalize="off" autocomplete="username"></div>
 <div><label>পাসওয়ার্ড</label><input id="apw" type="password" autocomplete="current-password"></div>
 <div class="full"><button id="alog">লগইন</button><div id="amsg" class="msg"></div></div></div></div>
 <div id="adPanel" hidden>
-<div class="box" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b id="who"></b><button id="aout" style="background:var(--mu)">লগআউট</button></div>
+<div class="box adhead"><b id="who"></b><button id="aout">লগআউট</button></div>
 <div class="box"><h3>পাসওয়ার্ড পরিবর্তন</h3><div class="grid">
 <div><label>বর্তমান পাসওয়ার্ড</label><input id="cp" type="password"></div>
 <div><label>নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="np" type="password"></div>
@@ -102,7 +111,7 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 </div>
 <p class="cnt" id="cnt"></p>
 <div class="cards" id="cards"></div>
-<p style="text-align:center;margin-top:24px"><button id="adl" type="button" style="background:none;color:var(--mu);border:1px solid var(--bd);padding:6px 14px;font-size:.85rem">🔐 অ্যাডমিন</button></p>
+
 </div>
 </div>
 
@@ -171,7 +180,9 @@ if(demo){$("adl").hidden=true}else{
   const showAdm=()=>{
     $("adLogin").hidden=!!adm;$("adPanel").hidden=!adm;
     if(adm){$("who").textContent="👤 অ্যাডমিন: "+adm.id;loadAdmins()}
-    $("adl").textContent=adm?"🔐 অ্যাডমিন প্যানেল":"🔐 অ্যাডমিন";
+    $("adl").textContent=adm?"⚙️ প্যানেল":"🔐 অ্যাডমিন লগইন";
+    $("achip").hidden=$("aout2").hidden=!adm;
+    if(adm){$("aname").textContent=adm.id;$("aav").textContent=adm.id[0].toUpperCase()}
     render();
   };
   async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,id:s.data().id}:null}
@@ -201,7 +212,7 @@ if(demo){$("adl").hidden=true}else{
     busy=false;$("alog").disabled=false;showAdm();
   };
   $("apw").onkeydown=e=>{if(e.key==="Enter")$("alog").click()};
-  $("aout").onclick=()=>signOut(auth);
+  $("aout").onclick=$("aout2").onclick=()=>signOut(auth);
   async function loadAdmins(){
     const box=$("alist");
     try{
