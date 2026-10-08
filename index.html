@@ -47,6 +47,16 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 #adl{background:var(--card);color:var(--tx);border:1px solid var(--bd)}#aout2{background:#d33}
 .achip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:4px 12px 4px 4px;font-size:.88rem}
 .aav{width:28px;height:28px;border-radius:50%;background:var(--pr);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.acts{position:relative}
+#adl{width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center}
+#adl.on::after{content:"";position:absolute;top:1px;right:1px;width:11px;height:11px;border-radius:50%;background:var(--pr);border:2px solid var(--card)}
+.menu{position:absolute;top:50px;right:0;min-width:230px;background:var(--card);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;z-index:40;display:flex;flex-direction:column}
+.menu button{background:none;color:var(--tx);text-align:left;border-radius:8px;padding:10px 12px;font-size:.95rem;width:100%}
+.menu button:hover{background:var(--bg)}.menu .who{padding:8px 12px;color:var(--mu);font-size:.85rem;border-bottom:1px solid var(--bd);margin-bottom:4px}
+#mdel,#mout{color:#d33}
+.mdl{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+.mbox{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;position:relative}
+.mbox input{margin-bottom:10px}.mx{position:absolute;top:10px;right:10px;background:none;color:var(--mu);padding:4px 10px;font-size:1.1rem}
 .lg{max-width:420px;margin:24px auto}.lg h2{text-align:center}.lg .grid{grid-template-columns:1fr}
 .adhead{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(135deg,var(--pr),#0a5c40);color:#fff;border:0}
 .adhead button{background:rgba(255,255,255,.2)}
@@ -59,7 +69,15 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <body>
 <div class="wrap">
 <div class="top"><div><h1>📋 তথ্য ডেটাবেস</h1>
-<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p></div><div class="acts"><button id="adl" type="button">🔐 অ্যাডমিন লগইন</button><span class="achip" id="achip" hidden><span class="aav" id="aav"></span><b id="aname"></b></span><button id="aout2" type="button" hidden>লগআউট</button></div></div>
+<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p></div><div class="acts"><button id="adl" type="button" aria-label="অ্যাডমিন"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+<div class="menu" id="menu" hidden>
+<button id="mlogin" type="button">🔐 অ্যাডমিন লগইন</button>
+<div class="who" id="mwho" hidden></div>
+<button id="madd" type="button" hidden>➕ নতুন অ্যাডমিন যোগ</button>
+<button id="mpw" type="button" hidden>🔑 পাসওয়ার্ড পরিবর্তন</button>
+<button id="mdel" type="button" hidden>🗑 সব তথ্য মুছুন</button>
+<button id="mout" type="button" hidden>🚪 লগআউট</button>
+</div></div></div>
 
 <div id="regView" hidden>
 <button id="back" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
@@ -76,25 +94,21 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 </div>
 </div>
 
-<div id="adView" hidden>
-<button id="adback" style="background:var(--mu);margin-bottom:12px">← ফিরে যান</button>
-<div class="box lg" id="adLogin"><h2>🔐 অ্যাডমিন লগইন</h2><div class="grid">
-<div><label>আইডি</label><input id="aid" autocapitalize="off" autocomplete="username"></div>
-<div><label>পাসওয়ার্ড</label><input id="apw" type="password" autocomplete="current-password"></div>
-<div class="full"><button id="alog">লগইন</button><div id="amsg" class="msg"></div></div></div></div>
-<div id="adPanel" hidden>
-<div class="box adhead"><b id="who"></b><button id="aout">লগআউট</button></div>
-<div class="box"><h3>পাসওয়ার্ড পরিবর্তন</h3><div class="grid">
-<div><label>বর্তমান পাসওয়ার্ড</label><input id="cp" type="password"></div>
-<div><label>নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="np" type="password"></div>
-<div class="full"><button id="cpb">পরিবর্তন করুন</button><div id="cpm" class="msg"></div></div></div></div>
-<div class="box"><h3>অ্যাডমিন তালিকা</h3><div id="alist"></div><div class="grid" style="margin-top:12px">
-<div><label>নতুন অ্যাডমিন আইডি</label><input id="nid" autocapitalize="off"></div>
-<div><label>পাসওয়ার্ড</label><input id="npw" type="password"></div>
-<div class="full"><button id="nab">অ্যাডমিন যোগ করুন</button><div id="nam" class="msg"></div></div></div></div>
-<div class="box"><h3>⚠️ ডেঞ্জার জোন</h3><p class="ds">সব প্রোফাইল চিরতরে মুছে যাবে।</p><button id="dall" style="background:#d33">সব তথ্য মুছুন</button><div id="dam" class="msg"></div></div>
-</div>
-</div>
+<div id="md" class="mdl" hidden><div class="mbox"><button id="mx" class="mx" type="button">✕</button>
+<div id="pLogin" hidden><h2>🔐 অ্যাডমিন লগইন</h2>
+<label>আইডি</label><input id="aid" autocapitalize="off" autocomplete="username">
+<label>পাসওয়ার্ড</label><input id="apw" type="password" autocomplete="current-password">
+<button id="alog">লগইন</button><div id="amsg" class="msg"></div></div>
+<div id="pPw" hidden><h2>🔑 পাসওয়ার্ড পরিবর্তন</h2>
+<label>বর্তমান পাসওয়ার্ড</label><input id="cp" type="password">
+<label>নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="np" type="password">
+<button id="cpb">পরিবর্তন করুন</button><div id="cpm" class="msg"></div></div>
+<div id="pAdd" hidden><h2>➕ নতুন অ্যাডমিন যোগ</h2>
+<label>আইডি</label><input id="nid" autocapitalize="off">
+<label>পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="npw" type="password">
+<button id="nab">অ্যাডমিন যোগ করুন</button><div id="nam" class="msg"></div>
+<h3 style="margin-top:18px">অ্যাডমিন তালিকা</h3><div id="alist"></div></div>
+</div></div>
 
 <div id="listView">
 <button id="add" style="margin-bottom:12px">＋ তথ্য যোগ করুন</button>
@@ -135,11 +149,11 @@ const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
 opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
 opts($("fu"),"সব ইউনিয়ন",U);opts($("fw"),"সব ওয়ার্ড",W);
 
-const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/admin")||h==="#/admin"?"admin":p.endsWith("/register")||h==="#/register"?"register":""};
-function route(){const r=pg();$("regView").hidden=r!=="register";$("adView").hidden=r!=="admin";$("listView").hidden=r!=="";window.scrollTo(0,0)}
+const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/register")||h==="#/register"?"register":""};
+function route(){const r=pg();$("regView").hidden=r!=="register";$("listView").hidden=r!=="";window.scrollTo(0,0)}
 function go(p){try{history.pushState({},"",p?"/"+p:"/")}catch(e){location.hash=p?"#/"+p:""}route()}
 $("add").onclick=()=>go("register");
-$("back").onclick=()=>go("");$("adback").onclick=()=>go("");$("adl").onclick=()=>go("admin");
+$("back").onclick=()=>go("");
 addEventListener("popstate",route);addEventListener("hashchange",route);
 route();
 
@@ -178,11 +192,10 @@ const okId=id=>/^[a-z0-9_.-]{3,20}$/.test(id.trim().toLowerCase());
 if(demo){$("adl").hidden=true}else{
   const auth=getAuth();let busy=false;
   const showAdm=()=>{
-    $("adLogin").hidden=!!adm;$("adPanel").hidden=!adm;
-    if(adm){$("who").textContent="👤 অ্যাডমিন: "+adm.id;loadAdmins()}
-    $("adl").textContent=adm?"⚙️ প্যানেল":"🔐 অ্যাডমিন লগইন";
-    $("achip").hidden=$("aout2").hidden=!adm;
-    if(adm){$("aname").textContent=adm.id;$("aav").textContent=adm.id[0].toUpperCase()}
+    $("mlogin").hidden=!!adm;
+    ["mwho","madd","mpw","mdel","mout"].forEach(x=>$(x).hidden=!adm);
+    if(adm)$("mwho").textContent="👤 অ্যাডমিন: "+adm.id;
+    $("adl").classList.toggle("on",!!adm);
     render();
   };
   async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,id:s.data().id}:null}
@@ -207,12 +220,19 @@ if(demo){$("adl").hidden=true}else{
         }else throw e;
       }
       adm=await checkAdmin(u);
-      if(!adm){await signOut(auth);say(m,"আপনি অ্যাডমিন নন")}else{$("apw").value="";say(m,"")}
+      if(!adm){await signOut(auth);say(m,"আপনি অ্যাডমিন নন")}else{$("apw").value="";say(m,"");closeM()}
     }catch(e){say(m,aerr(e,"ভুল আইডি বা পাসওয়ার্ড"))}
     busy=false;$("alog").disabled=false;showAdm();
   };
   $("apw").onkeydown=e=>{if(e.key==="Enter")$("alog").click()};
-  $("aout").onclick=$("aout2").onclick=()=>signOut(auth);
+  const openM=id=>{$("menu").hidden=true;$("md").hidden=false;["pLogin","pPw","pAdd"].forEach(x=>$(x).hidden=x!==id);if(id==="pAdd")loadAdmins()};
+  const closeM=()=>{$("md").hidden=true};
+  $("adl").onclick=e=>{e.stopPropagation();$("menu").hidden=!$("menu").hidden};
+  document.addEventListener("click",e=>{if(!e.target.closest(".acts"))$("menu").hidden=true});
+  $("mlogin").onclick=()=>openM("pLogin");$("madd").onclick=()=>openM("pAdd");$("mpw").onclick=()=>openM("pPw");
+  $("mx").onclick=closeM;$("md").onclick=e=>{if(e.target===$("md"))closeM()};
+  addEventListener("keydown",e=>{if(e.key==="Escape")closeM()});
+  $("mout").onclick=()=>{$("menu").hidden=true;signOut(auth)};
   async function loadAdmins(){
     const box=$("alist");
     try{
@@ -250,16 +270,14 @@ if(demo){$("adl").hidden=true}else{
       say(m,"✅ পাসওয়ার্ড বদলানো হয়েছে",1);$("cp").value="";$("np").value="";
     }catch(e){say(m,aerr(e,"বর্তমান পাসওয়ার্ড ভুল"))}
   };
-  $("dall").onclick=async()=>{
-    const m=$("dam");
+  $("mdel").onclick=async()=>{
+    $("menu").hidden=true;
     if(!confirm("সব তথ্য মুছে ফেলবেন? এটি ফেরত আনা যাবে না।")||!confirm("আবার নিশ্চিত করুন: সব প্রোফাইল মুছবে?"))return;
-    $("dall").disabled=true;
     try{
       const s=await getDocs(collection(db,"profiles"));
       for(let i=0;i<s.docs.length;i+=400){const b=writeBatch(db);s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
-      say(m,"✅ "+bn(s.size)+"টি তথ্য মুছে ফেলা হয়েছে",1);
-    }catch(e){say(m,aerr(e,"মুছা যায়নি"))}
-    $("dall").disabled=false;
+      alert("✅ "+bn(s.size)+"টি তথ্য মুছে ফেলা হয়েছে");
+    }catch(e){alert(aerr(e,"মুছা যায়নি"))}
   };
 }
 
