@@ -61,6 +61,9 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
 .tabs button{flex:none;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;font-size:.88rem;white-space:nowrap}
 .tabs button.par{font-weight:700}.tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+.trbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.sm{padding:7px 12px;font-size:.85rem}.danger{background:#d33}
+.chk{display:flex;align-items:center;gap:6px;color:var(--tx);font-size:.9rem}.chk input,.trow input{width:auto;margin:0;padding:0}
+.trow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}.trow .inf{flex:1;min-width:0}.trow .inf b{display:block}.trow small{color:var(--mu)}
 .lg{max-width:420px;margin:24px auto}.lg h2{text-align:center}.lg .grid{grid-template-columns:1fr}
 .adhead{display:flex;justify-content:space-between;align-items:center;gap:8px;background:linear-gradient(135deg,var(--pr),#0a5c40);color:#fff;border:0}
 .adhead button{background:rgba(255,255,255,.2)}
@@ -72,14 +75,15 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 </head>
 <body>
 <div class="wrap">
-<div class="top"><div><h1>📋 BB inFo</h1>
-<p class="sub">পলিটিক্যাল কমিউনিটি</p></div><div class="acts"><button id="adl" type="button" aria-label="অ্যাডমিন"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+<div class="top"><div><h1>📋 তথ্য ডেটাবেস</h1>
+<p class="sub">ইউনিয়ন ও ওয়ার্ড অনুযায়ী খুঁজুন</p></div><div class="acts"><button id="adl" type="button" aria-label="অ্যাডমিন"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
 <div class="menu" id="menu" hidden>
 <button id="mlogin" type="button">🔐 অ্যাডমিন লগইন</button>
 <div class="who" id="mwho" hidden></div>
 <button id="madd" type="button" hidden>➕ নতুন অ্যাডমিন যোগ</button>
 <button id="mpw" type="button" hidden>🔑 পাসওয়ার্ড পরিবর্তন</button>
-<button id="mdel" type="button" hidden>🗑 সব তথ্য মুছুন</button>
+<button id="mtrash" type="button" hidden>🗑 ট্র্যাশ (০)</button>
+<button id="mdel" type="button" hidden>📦 সব তথ্য ট্র্যাশে পাঠান</button>
 <button id="mout" type="button" hidden>🚪 লগআউট</button>
 </div></div></div>
 
@@ -110,6 +114,10 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <label>বর্তমান পাসওয়ার্ড</label><input id="cp" type="password">
 <label>নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="np" type="password">
 <button id="cpb">পরিবর্তন করুন</button><div id="cpm" class="msg"></div></div>
+<div id="pTrash" hidden><h2>🗑 ট্র্যাশ</h2>
+<div class="trbar"><label class="chk"><input type="checkbox" id="tall"> সব বাছাই</label><button id="trr" class="sm" type="button">↩ নির্বাচিত ফেরত</button><button id="trd" class="sm danger" type="button">নির্বাচিত মুছুন</button></div>
+<div class="trbar"><button id="trra" class="sm" type="button">↩ সব ফেরত আনুন</button><button id="trda" class="sm danger" type="button">সব স্থায়ীভাবে মুছুন</button></div>
+<div id="tlist"></div></div>
 <div id="pAdd" hidden><h2>➕ নতুন অ্যাডমিন যোগ</h2>
 <label>আইডি</label><input id="nid" autocapitalize="off">
 <label>পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="npw" type="password">
@@ -177,7 +185,9 @@ async function uploadImg(dataUrl){
   return j.data.display_url||j.data.url;
 }
 
-let data=[],db=null,adm=null;
+let data=[],db=null,adm=null,toTrashFn=null,cmap={};
+const phoneOf=p=>adm?(cmap[p.id]||p.whatsapp||""):"";
+$("q").placeholder="নাম বা ইউনিয়ন দিয়ে খুঁজুন";
 const demo=firebaseConfig.apiKey==="YOUR_API_KEY";
 if(demo){
   try{data=JSON.parse(localStorage.getItem("demo")||"[]")}catch(e){}
@@ -202,11 +212,45 @@ const mail=id=>id.trim().toLowerCase()+"@admin.local";
 const okId=id=>/^[a-z0-9_.-]{3,20}$/.test(id.trim().toLowerCase());
 if(demo){$("adl").hidden=true}else{
   const auth=getAuth();let busy=false;
+  let trash=[],unsubT=null,unsubC=null;const sel=new Set();
+  const chunk=(l,n,f)=>{const r=[];for(let i=0;i<l.length;i+=n)r.push(f(l.slice(i,i+n)));return Promise.all(r)};
+  async function toTrash(l){await chunk(l,200,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,whatsapp,...r}=p;b.set(doc(db,"trash",id),{...r,_phone:cmap[id]||whatsapp||"",deletedAt:serverTimestamp()});b.delete(doc(db,"profiles",id))});await b.commit()})}
+  async function restore(l){await chunk(l,150,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,deletedAt,_phone,whatsapp,...r}=p;b.set(doc(db,"profiles",id),r);const ph=_phone||whatsapp;if(ph)b.set(doc(db,"contacts",ph),{pid:id,whatsapp:ph});b.delete(doc(db,"trash",id))});await b.commit()})}
+  async function purge(l){await chunk(l,200,async c=>{const b=writeBatch(db);c.forEach(p=>{b.delete(doc(db,"trash",p.id));const ph=p._phone||p.whatsapp;if(ph)b.delete(doc(db,"contacts",ph))});await b.commit()})}
+  toTrashFn=toTrash;
+  const selected=()=>trash.filter(t=>sel.has(t.id));
+  async function doRestore(l){if(!l.length)return alert("কিছু বাছাই করুন");try{await restore(l);l.forEach(p=>sel.delete(p.id))}catch(e){alert(aerr(e,"ফেরত আনা যায়নি"))}}
+  async function doPurge(l){if(!l.length)return alert("কিছু বাছাই করুন");if(!confirm(bn(l.length)+"টি তথ্য স্থায়ীভাবে মুছবেন? ফেরত আনা যাবে না."))return;try{await purge(l);l.forEach(p=>sel.delete(p.id))}catch(e){alert(aerr(e,"মুছা যায়নি"))}}
+  function renderTrash(){
+    const box=$("tlist");box.innerHTML="";
+    [...sel].forEach(id=>{if(!trash.some(t=>t.id===id))sel.delete(id)});
+    if(!trash.length){box.innerHTML='<div class="ds">ট্র্যাশ খালি</div>';$("tall").checked=false;return}
+    trash.forEach(p=>{
+      const r=document.createElement("div");r.className="trow";
+      const cb=document.createElement("input");cb.type="checkbox";cb.checked=sel.has(p.id);
+      cb.onchange=()=>{cb.checked?sel.add(p.id):sel.delete(p.id);$("tall").checked=sel.size===trash.length};
+      const inf=document.createElement("div");inf.className="inf";
+      const b=document.createElement("b");b.textContent=p.name;
+      const sm=document.createElement("small");
+      sm.textContent=[p.category?p.category+(p.sub?" · "+p.sub:""):"",p.union,"ওয়ার্ড "+bn(p.ward),bn(p._phone||p.whatsapp||"")].filter(Boolean).join(" | ");
+      inf.append(b,sm);
+      const rb=document.createElement("button");rb.className="sm";rb.textContent="↩ ফেরত";rb.onclick=()=>doRestore([p]);
+      const xb=document.createElement("button");xb.className="sm danger";xb.textContent="✕";xb.title="স্থায়ীভাবে মুছুন";xb.onclick=()=>doPurge([p]);
+      r.append(cb,inf,rb,xb);box.append(r);
+    });
+    $("tall").checked=sel.size===trash.length;
+  }
+  function updTrash(){$("mtrash").textContent="🗑 ট্র্যাশ ("+bn(trash.length)+")";if(!$("pTrash").hidden)renderTrash()}
   const showAdm=()=>{
     $("mlogin").hidden=!!adm;
-    ["mwho","madd","mpw","mdel","mout"].forEach(x=>$(x).hidden=!adm);
+    ["mwho","madd","mpw","mtrash","mdel","mout"].forEach(x=>$(x).hidden=!adm);
     if(adm)$("mwho").textContent="👤 অ্যাডমিন: "+adm.id;
     $("adl").classList.toggle("on",!!adm);
+    if(adm&&!unsubT)unsubT=onSnapshot(collection(db,"trash"),s=>{trash=s.docs.map(d=>({id:d.id,...d.data()}));trash.sort((a,b)=>((b.deletedAt&&b.deletedAt.seconds)||0)-((a.deletedAt&&a.deletedAt.seconds)||0));updTrash()},()=>{});
+    if(!adm&&unsubT){unsubT();unsubT=null;trash=[];sel.clear();updTrash()}
+    if(adm&&!unsubC)unsubC=onSnapshot(collection(db,"contacts"),s=>{cmap={};s.docs.forEach(d=>{cmap[d.data().pid]=d.id});render()},()=>{});
+    if(!adm&&unsubC){unsubC();unsubC=null;cmap={}}
+    $("q").placeholder=adm?"নাম, ইউনিয়ন বা ফোন নাম্বার দিয়ে খুঁজুন":"নাম বা ইউনিয়ন দিয়ে খুঁজুন";
     render();
   };
   async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,id:s.data().id}:null}
@@ -236,11 +280,14 @@ if(demo){$("adl").hidden=true}else{
     busy=false;$("alog").disabled=false;showAdm();
   };
   $("apw").onkeydown=e=>{if(e.key==="Enter")$("alog").click()};
-  const openM=id=>{$("menu").hidden=true;$("md").hidden=false;["pLogin","pPw","pAdd"].forEach(x=>$(x).hidden=x!==id);if(id==="pAdd")loadAdmins()};
+  const openM=id=>{$("menu").hidden=true;$("md").hidden=false;["pLogin","pPw","pAdd","pTrash"].forEach(x=>$(x).hidden=x!==id);document.querySelector(".mbox").style.maxWidth=id==="pTrash"?"600px":"";if(id==="pAdd")loadAdmins();if(id==="pTrash")renderTrash()};
   const closeM=()=>{$("md").hidden=true};
   $("adl").onclick=e=>{e.stopPropagation();$("menu").hidden=!$("menu").hidden};
   document.addEventListener("click",e=>{if(!e.target.closest(".acts"))$("menu").hidden=true});
-  $("mlogin").onclick=()=>openM("pLogin");$("madd").onclick=()=>openM("pAdd");$("mpw").onclick=()=>openM("pPw");
+  $("mlogin").onclick=()=>openM("pLogin");$("madd").onclick=()=>openM("pAdd");$("mpw").onclick=()=>openM("pPw");$("mtrash").onclick=()=>openM("pTrash");
+  $("tall").onchange=()=>{if($("tall").checked)trash.forEach(t=>sel.add(t.id));else sel.clear();renderTrash()};
+  $("trr").onclick=()=>doRestore(selected());$("trd").onclick=()=>doPurge(selected());
+  $("trra").onclick=()=>doRestore(trash);$("trda").onclick=()=>doPurge(trash);
   $("mx").onclick=closeM;$("md").onclick=e=>{if(e.target===$("md"))closeM()};
   addEventListener("keydown",e=>{if(e.key==="Escape")closeM()});
   $("mout").onclick=()=>{$("menu").hidden=true;signOut(auth)};
@@ -283,12 +330,9 @@ if(demo){$("adl").hidden=true}else{
   };
   $("mdel").onclick=async()=>{
     $("menu").hidden=true;
-    if(!confirm("সব তথ্য মুছে ফেলবেন? এটি ফেরত আনা যাবে না।")||!confirm("আবার নিশ্চিত করুন: সব প্রোফাইল মুছবে?"))return;
-    try{
-      const s=await getDocs(collection(db,"profiles"));
-      for(let i=0;i<s.docs.length;i+=400){const b=writeBatch(db);s.docs.slice(i,i+400).forEach(d=>b.delete(d.ref));await b.commit()}
-      alert("✅ "+bn(s.size)+"টি তথ্য মুছে ফেলা হয়েছে");
-    }catch(e){alert(aerr(e,"মুছা যায়নি"))}
+    if(!data.length)return alert("কোনো তথ্য নেই");
+    if(!confirm("সব তথ্য ট্র্যাশে পাঠাবেন? ট্র্যাশ থেকে ফেরত আনা যাবে।"))return;
+    try{const n=data.length;await toTrash([...data]);alert("✅ "+bn(n)+"টি তথ্য ট্র্যাশে পাঠানো হয়েছে")}catch(e){alert(aerr(e,"সরানো যায়নি"))}
   };
 }
 
@@ -310,7 +354,7 @@ function render(){
   const u=$("fu").value,w=$("fw").value;
   const q=en($("q").value.trim().toLowerCase()).replace(/^\+?88/,"");
   const list=data.filter(p=>(!u||p.union===u)&&(!w||String(p.ward)===w)&&tabOk(p)&&(!q||
-    [p.name,p.designation||"",p.union,p.category||"",p.sub||""].some(x=>x.toLowerCase().includes(q))||p.whatsapp.includes(q)));
+    [p.name,p.designation||"",p.union,p.category||"",p.sub||""].some(x=>x.toLowerCase().includes(q))||phoneOf(p).includes(q)));
   $("fdot").hidden=!(u||w);
   $("cnt").textContent=bn(list.length)+" জন পাওয়া গেছে";
   const box=$("cards");box.innerHTML="";
@@ -325,10 +369,11 @@ function render(){
     if(p.designation){const d=document.createElement("div");d.className="ds";d.textContent=p.designation;c.append(d)}
     const t=document.createElement("div");
     [p.union+" ইউনিয়ন","ওয়ার্ড "+bn(p.ward)].forEach(x=>{const s=document.createElement("span");s.className="tag";s.textContent=x;t.append(s)});
-    const l=document.createElement("a");l.className="wa";l.target="_blank";l.rel="noopener";
-    l.href="https://wa.me/88"+p.whatsapp;l.textContent="💬 WhatsApp: "+bn(p.whatsapp);
-    c.append(t,l);
-    if(adm){const x=document.createElement("button");x.className="del";x.textContent="🗑 মুছুন";x.onclick=async()=>{if(confirm("এই তথ্য মুছবেন?"))try{await deleteDoc(doc(db,"profiles",p.id))}catch(e){alert("মুছা যায়নি")}};c.append(x)}
+    c.append(t);
+    const ph=phoneOf(p);
+    if(ph){const l=document.createElement("a");l.className="wa";l.target="_blank";l.rel="noopener";
+      l.href="https://wa.me/88"+ph;l.textContent="💬 WhatsApp: "+bn(ph);c.append(l)}
+    if(adm){const x=document.createElement("button");x.className="del";x.textContent="🗑 ট্র্যাশে পাঠান";x.onclick=async()=>{if(confirm("এই তথ্য ট্র্যাশে পাঠাবেন?"))try{await toTrashFn([p])}catch(e){alert("সরানো যায়নি")}};c.append(x)}
     box.append(c);
   });
 }
@@ -375,11 +420,16 @@ $("sub").onclick=async()=>{
     if(photo){m.className="msg";m.textContent="ছবি আপলোড হচ্ছে...";
       try{rec.photo=await uploadImg(photo)}catch(e){m.className="msg err";m.textContent="ছবি আপলোড করা যায়নি, আবার চেষ্টা করুন";$("sub").disabled=false;return}}
     if(demo){data.unshift(rec);localStorage.setItem("demo",JSON.stringify(data));render()}
-    else await addDoc(collection(db,"profiles"),{...rec,createdAt:serverTimestamp()});
+    else{
+      const pref=doc(collection(db,"profiles")),{whatsapp,...pub}=rec,bt=writeBatch(db);
+      bt.set(pref,{...pub,createdAt:serverTimestamp()});
+      bt.set(doc(db,"contacts",wa),{pid:pref.id,whatsapp:wa,createdAt:serverTimestamp()});
+      await bt.commit();
+    }
     m.className="msg ok";m.textContent="✅ তথ্য জমা হয়েছে";
     ["name","des","wa"].forEach(i=>$(i).value="");$("un").value="";$("wd").value="";$("cat").value="";$("subw").hidden=true;$("desw").hidden=true;setPhoto("");
     setTimeout(()=>{m.textContent="";go("")},1200);
-  }catch(e){m.textContent="জমা দেওয়া যায়নি, আবার চেষ্টা করুন"}
+  }catch(e){m.textContent=(e.code||"").includes("permission")?"জমা দেওয়া যায়নি — এই নাম্বার আগেই যোগ করা থাকতে পারে":"জমা দেওয়া যায়নি, আবার চেষ্টা করুন"}
   $("sub").disabled=false;
 };
 </script>
