@@ -57,7 +57,7 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .mdl{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
 .mbox{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;position:relative}
 .mbox input{margin-bottom:10px}.mx{position:absolute;top:10px;right:10px;background:none;color:var(--mu);padding:4px 10px;font-size:1.1rem}
-.cat{background:var(--pr);color:#fff;border-radius:20px;padding:3px 14px;font-size:.82rem}.cat.cand{background:#d97706}
+.cat{background:var(--pr);color:#fff;border-radius:20px;padding:3px 14px;font-size:.82rem}.cat.cand{background:#d97706}.cat.vol{background:#2563eb}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
 .tabs button{flex:none;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;font-size:.88rem;white-space:nowrap}
 .tabs button.par{font-weight:700}.tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
@@ -148,7 +148,7 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <div id="lb" hidden><img id="lbi" alt=""></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getFirestore,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDoc,deleteDoc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,addDoc,onSnapshot,query,orderBy,serverTimestamp,doc,setDoc,getDoc,deleteDoc,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged,updatePassword,reauthenticateWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ⚠️ নিজের Firebase কনফিগ বসান
@@ -163,9 +163,9 @@ const $=id=>document.getElementById(id);
 const opts=(el,first,list)=>{el.innerHTML="";const o=new Option(first,"");el.add(o);list.forEach(([v,t])=>el.add(new Option(t,v)))};
 const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
 opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
-opts($("fu"),"সব ইউনিয়ন",U);const CATS={"নেতা":["ছাত্রদল","যুবদল","সেচ্ছাসেবকদল","বিএনপি মূল দল"],"প্রার্থী":["চেয়ারম্যান","মেম্বার","কাউন্সিলর","উপজেলা চেয়ারম্যান","উপজেলা ভাইস চেয়ারম্যান"]};
+opts($("fu"),"সব ইউনিয়ন",U);const CATS={"নেতা":["ছাত্রদল","যুবদল","সেচ্ছাসেবকদল","বিএনপি মূল দল"],"প্রার্থী":["চেয়ারম্যান","মেম্বার","কাউন্সিলর","উপজেলা চেয়ারম্যান","উপজেলা ভাইস চেয়ারম্যান"],"সেচ্ছাসেবী":[]};
 opts($("cat"),"বাছাই করুন",Object.keys(CATS).map(k=>[k,k]));
-$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v;$("desw").hidden=v!=="নেতা";if(v!=="নেতা")$("des").value="";if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
+$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v||!CATS[v].length;$("desw").hidden=v!=="নেতা";if(v!=="নেতা")$("des").value="";if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
 opts($("fw"),"সব ওয়ার্ড",W);
 
 const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/register")||h==="#/register"?"register":""};
@@ -188,14 +188,18 @@ async function uploadImg(dataUrl){
 let data=[],db=null,adm=null,toTrashFn=null,cmap={};
 const phoneOf=p=>adm?(cmap[p.id]||p.whatsapp||""):"";
 $("q").placeholder="নাম বা ইউনিয়ন দিয়ে খুঁজুন";
+let loaded=false;
 const demo=firebaseConfig.apiKey==="YOUR_API_KEY";
 if(demo){
   try{data=JSON.parse(localStorage.getItem("demo")||"[]")}catch(e){}
-  render();
+  loaded=true;render();
 }else{
-  db=getFirestore(initializeApp(firebaseConfig));
+  const app=initializeApp(firebaseConfig);
+  try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){db=getFirestore(app)}
+  try{const c=JSON.parse(localStorage.getItem("pcache")||"null");if(c&&c.length){data=c;loaded=true;render()}}catch(e){}
   onSnapshot(query(collection(db,"profiles"),orderBy("createdAt","desc")),s=>{
-    data=s.docs.map(d=>{const r={id:d.id,...d.data()};if(r.union==="বিরিনিয়া")r.union="বিরুনিয়া";return r});render();
+    data=s.docs.map(d=>{const r={id:d.id,...d.data()};if(r.union==="বিরিনিয়া")r.union="বিরুনিয়া";return r});loaded=true;render();
+    try{localStorage.setItem("pcache",JSON.stringify(data.map(({whatsapp,createdAt,...r})=>r)))}catch(e){}
   },e=>{$("msg").textContent="ডেটা লোড করা যায়নি";$("msg").className="msg err"});
 }
 
@@ -358,14 +362,14 @@ function render(){
   $("fdot").hidden=!(u||w);
   $("cnt").textContent=bn(list.length)+" জন পাওয়া গেছে";
   const box=$("cards");box.innerHTML="";
-  if(!list.length){box.innerHTML='<div class="ds">কোনো তথ্য নেই</div>';return}
+  if(!list.length){box.innerHTML=loaded?'<div class="ds">কোনো তথ্য নেই</div>':'<div class="ds">⏳ লোড হচ্ছে...</div>';return}
   list.forEach(p=>{
     const c=document.createElement("div");c.className="pc";
     const a=document.createElement("div");a.className="av";
-    if(p.photo){const im=document.createElement("img");im.src=p.photo;im.alt="";a.append(im);a.classList.add("zoom");a.onclick=()=>{$("lbi").src=p.photo;$("lb").hidden=false}}else a.textContent=[...p.name][0]||"?";
+    if(p.photo){const im=document.createElement("img");im.loading="lazy";im.decoding="async";im.src=p.photo;im.alt="";a.append(im);a.classList.add("zoom");a.onclick=()=>{$("lbi").src=p.photo;$("lb").hidden=false}}else a.textContent=[...p.name][0]||"?";
     const n=document.createElement("div");n.className="nm";n.textContent=p.name;
     c.append(a,n);
-    if(p.category){const k=document.createElement("div");k.className="cat"+(p.category==="প্রার্থী"?" cand":"");k.textContent=p.category+(p.sub?" · "+p.sub:"");c.append(k)}
+    if(p.category){const k=document.createElement("div");k.className="cat"+(p.category==="প্রার্থী"?" cand":p.category==="সেচ্ছাসেবী"?" vol":"");k.textContent=p.category+(p.sub?" · "+p.sub:"");c.append(k)}
     if(p.designation){const d=document.createElement("div");d.className="ds";d.textContent=p.designation;c.append(d)}
     const t=document.createElement("div");
     [p.union+" ইউনিয়ন","ওয়ার্ড "+bn(p.ward)].forEach(x=>{const s=document.createElement("span");s.className="tag";s.textContent=x;t.append(s)});
@@ -410,7 +414,7 @@ $("sub").onclick=async()=>{
   const name=$("name").value.trim(),designation=$("cat").value==="নেতা"?$("des").value.trim():"",union=$("un").value,ward=+$("wd").value,cat=$("cat").value,subc=$("subc").value;
   let wa=en($("wa").value).replace(/[\s\-+]/g,"").replace(/^88/,"");
   if(!name)return m.textContent="নাম লিখুন";
-  if(!cat)return m.textContent="ক্যাটাগরি বাছাই করুন";if(!subc)return m.textContent=cat==="নেতা"?"নেতার ধরন বাছাই করুন":"পদ বাছাই করুন";if(!union)return m.textContent="ইউনিয়ন বাছাই করুন";
+  if(!cat)return m.textContent="ক্যাটাগরি বাছাই করুন";if(CATS[cat].length&&!subc)return m.textContent=cat==="নেতা"?"নেতার ধরন বাছাই করুন":"পদ বাছাই করুন";if(!union)return m.textContent="ইউনিয়ন বাছাই করুন";
   if(!ward)return m.textContent="ওয়ার্ড নং বাছাই করুন";
   if(!/^01[3-9]\d{8}$/.test(wa))return m.textContent="সঠিক WhatsApp নাম্বার দিন (১১ ডিজিট)";
   if(data.some(p=>p.whatsapp===wa))return m.textContent="এই নাম্বার আগেই যোগ করা হয়েছে";
