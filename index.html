@@ -57,7 +57,10 @@ img.av{object-fit:cover}.pv{width:90px;height:90px;object-fit:cover;border-radiu
 .mdl{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
 .mbox{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow:auto;position:relative}
 .mbox input{margin-bottom:10px}.mx{position:absolute;top:10px;right:10px;background:none;color:var(--mu);padding:4px 10px;font-size:1.1rem}
-.cat{background:var(--pr);color:#fff;border-radius:20px;padding:3px 14px;font-size:.82rem}.cat.cand{background:#d97706}.cat.vol{background:#2563eb}
+.cat{background:var(--pr);color:#fff;border-radius:20px;padding:3px 14px;font-size:.82rem}.cat.cand{background:#d97706}.cat.vol{background:#2563eb}.cat.vip{background:linear-gradient(135deg,#b8860b,#f5c518);color:#3b2a00;font-weight:700}
+.perms{display:flex;flex-wrap:wrap;gap:6px 14px;margin:4px 0 10px}.perms label{display:flex;align-items:center;gap:4px;color:var(--tx);font-size:.9rem;margin:0}.perms input{width:auto;margin:0}
+.arow2{border-bottom:1px solid var(--bd);padding:6px 0}.arow2 .arow{border:0;padding:0;gap:6px}.rb{font-size:.72rem;border-radius:10px;padding:1px 8px;background:var(--bd)}
+.rb.main{background:#f5c518;color:#3b2a00}.rb.admin{background:var(--pr);color:#fff}.rb.author{background:#2563eb;color:#fff}.ptxt{color:var(--mu)}.aedit{padding:8px 0}.aedit select,#nrole{margin-bottom:10px}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
 .tabs button{flex:none;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;font-size:.88rem;white-space:nowrap}
 .tabs button.par{font-weight:700}.tabs button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
@@ -121,6 +124,8 @@ h2,h3{margin:0 0 10px}.del{background:#d33;padding:6px 12px;margin-top:4px;align
 <div id="pAdd" hidden><h2>➕ নতুন অ্যাডমিন যোগ</h2>
 <label>আইডি</label><input id="nid" autocapitalize="off">
 <label>পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="npw" type="password">
+<label>রোল</label><select id="nrole"><option value="admin">অ্যাডমিন</option><option value="author">অথার</option></select>
+<label>কোন কোন ট্যাবের তথ্য দেখতে পারবে</label><div id="nperm" class="perms"></div>
 <button id="nab">অ্যাডমিন যোগ করুন</button><div id="nam" class="msg"></div>
 <h3 style="margin-top:18px">অ্যাডমিন তালিকা</h3><div id="alist"></div></div>
 </div></div>
@@ -163,9 +168,9 @@ const $=id=>document.getElementById(id);
 const opts=(el,first,list)=>{el.innerHTML="";const o=new Option(first,"");el.add(o);list.forEach(([v,t])=>el.add(new Option(t,v)))};
 const U=UNIONS.map(u=>[u,u]),W=Array.from({length:11},(_,i)=>[i+1,bn(i+1)]);
 opts($("un"),"বাছাই করুন",U);opts($("wd"),"বাছাই করুন",W);
-opts($("fu"),"সব ইউনিয়ন",U);const CATS={"নেতা":["ছাত্রদল","যুবদল","সেচ্ছাসেবকদল","বিএনপি মূল দল"],"প্রার্থী":["চেয়ারম্যান","মেম্বার","কাউন্সিলর","উপজেলা চেয়ারম্যান","উপজেলা ভাইস চেয়ারম্যান"],"সেচ্ছাসেবী":[]};
-opts($("cat"),"বাছাই করুন",Object.keys(CATS).map(k=>[k,k]));
-$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v||!CATS[v].length;$("desw").hidden=v!=="নেতা";if(v!=="নেতা")$("des").value="";if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
+opts($("fu"),"সব ইউনিয়ন",U);const CATS={"নেতা":["ছাত্রদল","যুবদল","সেচ্ছাসেবকদল","বিএনপি মূল দল"],"প্রার্থী":["চেয়ারম্যান","মেম্বার","কাউন্সিলর","উপজেলা চেয়ারম্যান","উপজেলা ভাইস চেয়ারম্যান"],"সেচ্ছাসেবী":[],"ViP":[]};
+opts($("cat"),"বাছাই করুন",Object.keys(CATS).filter(k=>k!=="ViP").map(k=>[k,k]));
+$("cat").onchange=()=>{const v=$("cat").value;$("subw").hidden=!v||!CATS[v].length;const dv=v==="নেতা"||v==="ViP";$("desw").hidden=!dv;if(!dv)$("des").value="";if(v){$("sublbl").textContent=(v==="নেতা"?"নেতার ধরন":"পদ")+" *";opts($("subc"),"বাছাই করুন",CATS[v].map(x=>[x,x]))}};
 opts($("fw"),"সব ওয়ার্ড",W);
 
 const pg=()=>{const p=location.pathname.replace(/\/+$/,""),h=location.hash;return p.endsWith("/register")||h==="#/register"?"register":""};
@@ -185,8 +190,19 @@ async function uploadImg(dataUrl){
   return j.data.display_url||j.data.url;
 }
 
-let data=[],db=null,adm=null,toTrashFn=null,cmap={};
-const phoneOf=p=>adm?(cmap[p.id]||p.whatsapp||""):"";
+let data=[],db=null,adm=null,toTrashFn=null,cmap={},vmap={},dPub=[],dVip=[];
+const ALLP=["leader","candidate","volunteer","vip"];
+const TABS=[["leader","নেতা"],["candidate","প্রার্থী"],["volunteer","সেচ্ছাসেবী"],["vip","ViP"]];
+const KEY={"নেতা":"leader","প্রার্থী":"candidate","সেচ্ছাসেবী":"volunteer","ViP":"vip"};
+const isMain=()=>!!adm&&adm.role==="main";
+const isAdm=()=>!!adm&&adm.role!=="author";
+const tabPerm=c=>!!adm&&(adm.role==="main"||!c||adm.perms.includes(KEY[c]));
+const canManage=p=>isAdm()&&(p._vip?tabPerm("ViP"):tabPerm(p.category));
+const canViewVip=()=>!!adm&&(adm.role==="main"||adm.perms.includes("vip"));
+const canAddVip=()=>isAdm()&&canViewVip();
+const mergeData=()=>{data=dPub.concat(dVip)};
+const buildCats=()=>opts($("cat"),"বাছাই করুন",Object.keys(CATS).filter(k=>k!=="ViP"||canAddVip()).map(k=>[k,k]));
+const phoneOf=p=>canManage(p)?(p._vip?(vmap[p.id]||""):(cmap[p.id]||p.whatsapp||"")):"";
 $("q").placeholder="নাম বা ইউনিয়ন দিয়ে খুঁজুন";
 let loaded=false;
 const demo=firebaseConfig.apiKey==="YOUR_API_KEY";
@@ -196,10 +212,10 @@ if(demo){
 }else{
   const app=initializeApp(firebaseConfig);
   try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){db=getFirestore(app)}
-  try{const c=JSON.parse(localStorage.getItem("pcache")||"null");if(c&&c.length){data=c;loaded=true;render()}}catch(e){}
+  try{const c=JSON.parse(localStorage.getItem("pcache")||"null");if(c&&c.length){dPub=c;mergeData();loaded=true;render()}}catch(e){}
   onSnapshot(query(collection(db,"profiles"),orderBy("createdAt","desc")),s=>{
-    data=s.docs.map(d=>{const r={id:d.id,...d.data()};if(r.union==="বিরিনিয়া")r.union="বিরুনিয়া";return r});loaded=true;render();
-    try{localStorage.setItem("pcache",JSON.stringify(data.map(({whatsapp,createdAt,...r})=>r)))}catch(e){}
+    dPub=s.docs.map(d=>{const r={id:d.id,...d.data()};if(r.union==="বিরিনিয়া")r.union="বিরুনিয়া";return r});mergeData();loaded=true;render();
+    try{localStorage.setItem("pcache",JSON.stringify(dPub.map(({whatsapp,createdAt,...r})=>r)))}catch(e){}
   },e=>{$("msg").textContent="ডেটা লোড করা যায়নি";$("msg").className="msg err"});
 }
 
@@ -216,11 +232,12 @@ const mail=id=>id.trim().toLowerCase()+"@admin.local";
 const okId=id=>/^[a-z0-9_.-]{3,20}$/.test(id.trim().toLowerCase());
 if(demo){$("adl").hidden=true}else{
   const auth=getAuth();let busy=false;
-  let trash=[],unsubT=null,unsubC=null;const sel=new Set();
+  let trash=[],trashN=[],trashV=[];const subs={};const sel=new Set();
   const chunk=(l,n,f)=>{const r=[];for(let i=0;i<l.length;i+=n)r.push(f(l.slice(i,i+n)));return Promise.all(r)};
-  async function toTrash(l){await chunk(l,200,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,whatsapp,...r}=p;b.set(doc(db,"trash",id),{...r,_phone:cmap[id]||whatsapp||"",deletedAt:serverTimestamp()});b.delete(doc(db,"profiles",id))});await b.commit()})}
-  async function restore(l){await chunk(l,150,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,deletedAt,_phone,whatsapp,...r}=p;b.set(doc(db,"profiles",id),r);const ph=_phone||whatsapp;if(ph)b.set(doc(db,"contacts",ph),{pid:id,whatsapp:ph});b.delete(doc(db,"trash",id))});await b.commit()})}
-  async function purge(l){await chunk(l,200,async c=>{const b=writeBatch(db);c.forEach(p=>{b.delete(doc(db,"trash",p.id));const ph=p._phone||p.whatsapp;if(ph)b.delete(doc(db,"contacts",ph))});await b.commit()})}
+  const colOf=p=>p._vip?["vip","viptrash","vipc"]:["profiles","trash","contacts"];
+  async function toTrash(l){await chunk(l,150,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,whatsapp,_vip,...r}=p;const[m,t]=colOf(p);b.set(doc(db,t,id),{...r,_phone:(_vip?vmap[id]:(cmap[id]||whatsapp))||"",deletedAt:serverTimestamp()});b.delete(doc(db,m,id))});await b.commit()})}
+  async function restore(l){await chunk(l,150,async c=>{const b=writeBatch(db);c.forEach(p=>{const{id,deletedAt,_phone,whatsapp,_vip,...r}=p;const[m,t,k]=colOf(p);b.set(doc(db,m,id),r);const ph=_phone||whatsapp;if(ph)b.set(_vip?doc(db,k,id):doc(db,k,ph),_vip?{whatsapp:ph}:{pid:id,whatsapp:ph});b.delete(doc(db,t,id))});await b.commit()})}
+  async function purge(l){await chunk(l,200,async c=>{const b=writeBatch(db);c.forEach(p=>{const[,t,k]=colOf(p);b.delete(doc(db,t,p.id));if(p._vip)b.delete(doc(db,k,p.id));else{const ph=p._phone||p.whatsapp;if(ph)b.delete(doc(db,k,ph))}});await b.commit()})}
   toTrashFn=toTrash;
   const selected=()=>trash.filter(t=>sel.has(t.id));
   async function doRestore(l){if(!l.length)return alert("কিছু বাছাই করুন");try{await restore(l);l.forEach(p=>sel.delete(p.id))}catch(e){alert(aerr(e,"ফেরত আনা যায়নি"))}}
@@ -245,19 +262,33 @@ if(demo){$("adl").hidden=true}else{
     $("tall").checked=sel.size===trash.length;
   }
   function updTrash(){$("mtrash").textContent="🗑 ট্র্যাশ ("+bn(trash.length)+")";if(!$("pTrash").hidden)renderTrash()}
+  const mkTrash=()=>{trash=trashN.concat(trashV).filter(canManage);trash.sort((a,b)=>((b.deletedAt&&b.deletedAt.seconds)||0)-((a.deletedAt&&a.deletedAt.seconds)||0))};
+  const sub=(k,on,mk)=>{if(on&&!subs[k])subs[k]=mk();if(!on&&subs[k]){subs[k]();delete subs[k]}};
+  const RL={main:"মেইন অ্যাডমিন",admin:"অ্যাডমিন",author:"অথার"};
+  const norm=d=>{const role=d.role||(d.id==="admin"?"main":"admin");return{id:d.id,role,perms:role==="main"?ALLP:(d.perms||["leader","candidate","volunteer"])}};
   const showAdm=()=>{
     $("mlogin").hidden=!!adm;
-    ["mwho","madd","mpw","mtrash","mdel","mout"].forEach(x=>$(x).hidden=!adm);
-    if(adm)$("mwho").textContent="👤 অ্যাডমিন: "+adm.id;
+    $("mwho").hidden=$("mpw").hidden=$("mout").hidden=!adm;
+    $("madd").hidden=!isMain();$("mtrash").hidden=!isAdm();$("mdel").hidden=!isMain();
+    if(adm)$("mwho").textContent="👤 "+adm.id+" · "+RL[adm.role];
     $("adl").classList.toggle("on",!!adm);
-    if(adm&&!unsubT)unsubT=onSnapshot(collection(db,"trash"),s=>{trash=s.docs.map(d=>({id:d.id,...d.data()}));trash.sort((a,b)=>((b.deletedAt&&b.deletedAt.seconds)||0)-((a.deletedAt&&a.deletedAt.seconds)||0));updTrash()},()=>{});
-    if(!adm&&unsubT){unsubT();unsubT=null;trash=[];sel.clear();updTrash()}
-    if(adm&&!unsubC)unsubC=onSnapshot(collection(db,"contacts"),s=>{cmap={};s.docs.forEach(d=>{cmap[d.data().pid]=d.id});render()},()=>{});
-    if(!adm&&unsubC){unsubC();unsubC=null;cmap={}}
-    $("q").placeholder=adm?"নাম, ইউনিয়ন বা ফোন নাম্বার দিয়ে খুঁজুন":"নাম বা ইউনিয়ন দিয়ে খুঁজুন";
+    const vp=canViewVip(),vA=isAdm()&&vp,byNew=(a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0);
+    sub("t",isAdm(),()=>onSnapshot(collection(db,"trash"),s=>{trashN=s.docs.map(d=>({id:d.id,...d.data()}));mkTrash();updTrash()},()=>{}));
+    sub("c",isAdm(),()=>onSnapshot(collection(db,"contacts"),s=>{cmap={};s.docs.forEach(d=>{cmap[d.data().pid]=d.id});render()},()=>{}));
+    sub("v",vp,()=>onSnapshot(collection(db,"vip"),s=>{dVip=s.docs.map(d=>({id:d.id,_vip:true,...d.data()})).sort(byNew);mergeData();render()},()=>{}));
+    sub("vc",vA,()=>onSnapshot(collection(db,"vipc"),s=>{vmap={};s.docs.forEach(d=>{vmap[d.id]=d.data().whatsapp});render()},()=>{}));
+    sub("vt",vA,()=>onSnapshot(collection(db,"viptrash"),s=>{trashV=s.docs.map(d=>({id:d.id,_vip:true,...d.data()}));mkTrash();updTrash()},()=>{}));
+    if(!isAdm()){trashN=[];cmap={}}
+    if(!vp){dVip=[];mergeData()}
+    if(!vA){vmap={};trashV=[]}
+    if(!adm)sel.clear();
+    if(!vp&&tab.includes("ViP"))tab="";
+    mkTrash();updTrash();
+    buildCats();$("cat").onchange();
+    $("q").placeholder=isAdm()?"নাম, ইউনিয়ন বা ফোন নাম্বার দিয়ে খুঁজুন":"নাম বা ইউনিয়ন দিয়ে খুঁজুন";
     render();
   };
-  async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,id:s.data().id}:null}
+  async function checkAdmin(u){const s=await getDoc(doc(db,"admins",u.uid));return s.exists()?{uid:u.uid,...norm(s.data())}:null}
   onAuthStateChanged(auth,async u=>{
     if(busy)return;
     if(!u){adm=null;showAdm();return}
@@ -274,7 +305,7 @@ if(demo){$("adl").hidden=true}else{
       try{u=(await signInWithEmailAndPassword(auth,mail(id),pw)).user}
       catch(e){
         if(id==="admin"&&pw==="admin1"&&/user-not-found|invalid-credential|invalid-login/.test(e.code||"")){
-          try{u=(await createUserWithEmailAndPassword(auth,mail(id),pw)).user;await setDoc(doc(db,"admins",u.uid),{id:"admin",createdAt:serverTimestamp()})}
+          try{u=(await createUserWithEmailAndPassword(auth,mail(id),pw)).user;await setDoc(doc(db,"admins",u.uid),{id:"admin",role:"main",perms:ALLP,createdAt:serverTimestamp()})}
           catch(e2){await signOut(auth).catch(()=>{});throw /email-already/.test(e2.code||"")?e:e2}
         }else throw e;
       }
@@ -295,22 +326,42 @@ if(demo){$("adl").hidden=true}else{
   $("mx").onclick=closeM;$("md").onclick=e=>{if(e.target===$("md"))closeM()};
   addEventListener("keydown",e=>{if(e.key==="Escape")closeM()});
   $("mout").onclick=()=>{$("menu").hidden=true;signOut(auth)};
+  const permBox=(box,selv)=>{box.innerHTML="";TABS.forEach(([k,l])=>{const lb=document.createElement("label"),cb=document.createElement("input");cb.type="checkbox";cb.value=k;cb.checked=selv.includes(k);lb.append(cb," "+l);box.append(lb)});return()=>[...box.querySelectorAll("input:checked")].map(x=>x.value)};
+  const defP=["leader","candidate","volunteer"];
+  let getNP=permBox($("nperm"),defP);
+  const permTxt=a=>a.role==="main"?"সব ট্যাব":(a.perms.map(k=>(TABS.find(t=>t[0]===k)||[0,k])[1]).join(", ")||"কোনো ট্যাব নেই");
   async function loadAdmins(){
     const box=$("alist");
     try{
       const s=await getDocs(collection(db,"admins"));box.innerHTML="";
       s.docs.forEach(d=>{
-        const r=document.createElement("div");r.className="arow";
-        const n=document.createElement("span");n.textContent=d.data().id+(d.id===adm.uid?" (আপনি)":"");r.append(n);
-        if(d.id!==adm.uid){const b=document.createElement("button");b.className="del";b.textContent="সরান";
-          b.onclick=async()=>{if(!confirm(d.data().id+" কে অ্যাডমিন থেকে সরাবেন?"))return;
-            try{await deleteDoc(doc(db,"admins",d.id));loadAdmins()}catch(e){say($("nam"),aerr(e,"সরানো যায়নি"))}};r.append(b)}
-        box.append(r);
+        const a={uid:d.id,...norm(d.data())};
+        const r=document.createElement("div");r.className="arow2";
+        const top=document.createElement("div");top.className="arow";
+        const n=document.createElement("span"),nm=document.createElement("b"),rb=document.createElement("span"),pt=document.createElement("small");
+        nm.textContent=a.id+(a.uid===adm.uid?" (আপনি)":"");rb.className="rb "+a.role;rb.textContent=RL[a.role];pt.className="ptxt";pt.textContent=permTxt(a);
+        n.append(nm," ",rb,document.createElement("br"),pt);top.append(n);
+        const ed=document.createElement("div");ed.className="aedit";ed.hidden=true;
+        if(a.role!=="main"){
+          const bx=document.createElement("div");bx.style.cssText="display:flex;gap:6px";
+          const eb=document.createElement("button");eb.className="sm";eb.textContent="পারমিশন";eb.onclick=()=>{ed.hidden=!ed.hidden};
+          const sr=document.createElement("select");[["admin","অ্যাডমিন"],["author","অথার"]].forEach(([v,t])=>sr.add(new Option(t,v)));sr.value=a.role;
+          const pb=document.createElement("div");pb.className="perms";const gp=permBox(pb,a.perms);
+          const sv=document.createElement("button");sv.className="sm";sv.textContent="সেভ করুন";
+          sv.onclick=async()=>{try{await setDoc(doc(db,"admins",a.uid),{role:sr.value,perms:gp()},{merge:true});loadAdmins()}catch(e){say($("nam"),aerr(e,"সেভ হয়নি"))}};
+          ed.append(sr,pb,sv);bx.append(eb);
+          if(a.uid!==adm.uid){const b=document.createElement("button");b.className="del";b.textContent="সরান";
+            b.onclick=async()=>{if(!confirm(a.id+" কে সরাবেন?"))return;
+              try{await deleteDoc(doc(db,"admins",a.uid));loadAdmins()}catch(e){say($("nam"),aerr(e,"সরানো যায়নি"))}};bx.append(b)}
+          top.append(bx);
+        }
+        r.append(top,ed);box.append(r);
       });
     }catch(e){box.textContent=""}
   }
   $("nab").onclick=async()=>{
-    const m=$("nam"),id=$("nid").value.trim().toLowerCase(),pw=$("npw").value;
+    const m=$("nam"),id=$("nid").value.trim().toLowerCase(),pw=$("npw").value,role=$("nrole").value,perms=getNP();
+    if(!isMain())return say(m,"শুধু মেইন অ্যাডমিন নতুন অ্যাডমিন যোগ করতে পারবেন");
     if(!okId(id))return say(m,"আইডি ৩-২০ অক্ষরের (ইংরেজি অক্ষর/সংখ্যা) হতে হবে");
     if(pw.length<6)return say(m,"পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন");
     $("nab").disabled=true;
@@ -318,8 +369,8 @@ if(demo){$("adl").hidden=true}else{
       const au2=getAuth(initializeApp(firebaseConfig,"sec"+Date.now()));
       const cr=await createUserWithEmailAndPassword(au2,mail(id),pw);
       await signOut(au2);
-      await setDoc(doc(db,"admins",cr.user.uid),{id,createdAt:serverTimestamp()});
-      say(m,"✅ অ্যাডমিন যোগ হয়েছে",1);$("nid").value="";$("npw").value="";loadAdmins();
+      await setDoc(doc(db,"admins",cr.user.uid),{id,role,perms,createdAt:serverTimestamp()});
+      say(m,"✅ যোগ হয়েছে",1);$("nid").value="";$("npw").value="";getNP=permBox($("nperm"),defP);loadAdmins();
     }catch(e){say(m,aerr(e,"যোগ করা যায়নি"))}
     $("nab").disabled=false;
   };
@@ -336,19 +387,19 @@ if(demo){$("adl").hidden=true}else{
     $("menu").hidden=true;
     if(!data.length)return alert("কোনো তথ্য নেই");
     if(!confirm("সব তথ্য ট্র্যাশে পাঠাবেন? ট্র্যাশ থেকে ফেরত আনা যাবে।"))return;
-    try{const n=data.length;await toTrash([...data]);alert("✅ "+bn(n)+"টি তথ্য ট্র্যাশে পাঠানো হয়েছে")}catch(e){alert(aerr(e,"সরানো যায়নি"))}
+    try{const L=data.filter(canManage),n=L.length;await toTrash(L);alert("✅ "+bn(n)+"টি তথ্য ট্র্যাশে পাঠানো হয়েছে")}catch(e){alert(aerr(e,"সরানো যায়নি"))}
   };
 }
 
 let tab="";
-const tabOk=p=>{if(!tab)return true;const x=tab.slice(2);if(tab[0]==="c")return p.category===x;const[k,sb]=x.split("|");return p.category===k&&p.sub===sb};
+const tabOk=p=>{if(!tab)return !p._vip;const x=tab.slice(2);if(tab[0]==="c")return p.category===x;const[k,sb]=x.split("|");return p.category===k&&p.sub===sb};
 function renderTabs(){
   const box=$("tabs");box.innerHTML="";
   const add=(key,label,n,par)=>{const b=document.createElement("button");b.type="button";
     b.className=(par?"par ":"")+(tab===key?"on":"");b.textContent=label+" ("+bn(n)+")";
     b.onclick=()=>{tab=key;render()};box.append(b)};
-  add("","সব",data.length,true);
-  Object.keys(CATS).forEach(k=>{
+  add("","সব",data.filter(p=>!p._vip).length,true);
+  Object.keys(CATS).filter(k=>k!=="ViP"||canViewVip()).forEach(k=>{
     add("c:"+k,k,data.filter(p=>p.category===k).length,true);
     CATS[k].forEach(x=>add("s:"+k+"|"+x,x,data.filter(p=>p.category===k&&p.sub===x).length,false));
   });
@@ -369,7 +420,7 @@ function render(){
     if(p.photo){const im=document.createElement("img");im.loading="lazy";im.decoding="async";im.src=p.photo;im.alt="";a.append(im);a.classList.add("zoom");a.onclick=()=>{$("lbi").src=p.photo;$("lb").hidden=false}}else a.textContent=[...p.name][0]||"?";
     const n=document.createElement("div");n.className="nm";n.textContent=p.name;
     c.append(a,n);
-    if(p.category){const k=document.createElement("div");k.className="cat"+(p.category==="প্রার্থী"?" cand":p.category==="সেচ্ছাসেবী"?" vol":"");k.textContent=p.category+(p.sub?" · "+p.sub:"");c.append(k)}
+    if(p.category){const k=document.createElement("div");k.className="cat"+(p.category==="প্রার্থী"?" cand":p.category==="সেচ্ছাসেবী"?" vol":p.category==="ViP"?" vip":"");k.textContent=p.category+(p.sub?" · "+p.sub:"");c.append(k)}
     if(p.designation){const d=document.createElement("div");d.className="ds";d.textContent=p.designation;c.append(d)}
     const t=document.createElement("div");
     [p.union+" ইউনিয়ন","ওয়ার্ড "+bn(p.ward)].forEach(x=>{const s=document.createElement("span");s.className="tag";s.textContent=x;t.append(s)});
@@ -377,7 +428,7 @@ function render(){
     const ph=phoneOf(p);
     if(ph){const l=document.createElement("a");l.className="wa";l.target="_blank";l.rel="noopener";
       l.href="https://wa.me/88"+ph;l.textContent="💬 WhatsApp: "+bn(ph);c.append(l)}
-    if(adm){const x=document.createElement("button");x.className="del";x.textContent="🗑 ট্র্যাশে পাঠান";x.onclick=async()=>{if(confirm("এই তথ্য ট্র্যাশে পাঠাবেন?"))try{await toTrashFn([p])}catch(e){alert("সরানো যায়নি")}};c.append(x)}
+    if(canManage(p)){const x=document.createElement("button");x.className="del";x.textContent="🗑 ট্র্যাশে পাঠান";x.onclick=async()=>{if(confirm("এই তথ্য ট্র্যাশে পাঠাবেন?"))try{await toTrashFn([p])}catch(e){alert("সরানো যায়নি")}};c.append(x)}
     box.append(c);
   });
 }
@@ -411,7 +462,7 @@ $("ph").onchange=e=>{
 
 $("sub").onclick=async()=>{
   const m=$("msg");m.className="msg err";
-  const name=$("name").value.trim(),designation=$("cat").value==="নেতা"?$("des").value.trim():"",union=$("un").value,ward=+$("wd").value,cat=$("cat").value,subc=$("subc").value;
+  const name=$("name").value.trim(),designation=["নেতা","ViP"].includes($("cat").value)?$("des").value.trim():"",union=$("un").value,ward=+$("wd").value,cat=$("cat").value,subc=$("subc").value;
   let wa=en($("wa").value).replace(/[\s\-+]/g,"").replace(/^88/,"");
   if(!name)return m.textContent="নাম লিখুন";
   if(!cat)return m.textContent="ক্যাটাগরি বাছাই করুন";if(CATS[cat].length&&!subc)return m.textContent=cat==="নেতা"?"নেতার ধরন বাছাই করুন":"পদ বাছাই করুন";if(!union)return m.textContent="ইউনিয়ন বাছাই করুন";
@@ -425,9 +476,11 @@ $("sub").onclick=async()=>{
       try{rec.photo=await uploadImg(photo)}catch(e){m.className="msg err";m.textContent="ছবি আপলোড করা যায়নি, আবার চেষ্টা করুন";$("sub").disabled=false;return}}
     if(demo){data.unshift(rec);localStorage.setItem("demo",JSON.stringify(data));render()}
     else{
-      const pref=doc(collection(db,"profiles")),{whatsapp,...pub}=rec,bt=writeBatch(db);
+      const isV=cat==="ViP";
+      if(isV&&!canAddVip())throw new Error("novip");
+      const pref=doc(collection(db,isV?"vip":"profiles")),{whatsapp,...pub}=rec,bt=writeBatch(db);
       bt.set(pref,{...pub,createdAt:serverTimestamp()});
-      bt.set(doc(db,"contacts",wa),{pid:pref.id,whatsapp:wa,createdAt:serverTimestamp()});
+      bt.set(isV?doc(db,"vipc",pref.id):doc(db,"contacts",wa),isV?{whatsapp:wa}:{pid:pref.id,whatsapp:wa,createdAt:serverTimestamp()});
       await bt.commit();
     }
     m.className="msg ok";m.textContent="✅ তথ্য জমা হয়েছে";
